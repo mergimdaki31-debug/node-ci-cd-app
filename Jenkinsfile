@@ -2,21 +2,22 @@ pipeline {
     agent any
 
     environment {
-        // Emri i imazhit Docker
-        DOCKER_IMAGE = "mergimdaki31/nodejs-jenkins"
+        IMAGE_NAME = "dagi25/nodejs-jenkins:latest" // ose mergimdaki31/nodejs-jenkins:latest nëse repo ekziston
     }
 
     stages {
-
         stage('Checkout SCM') {
             steps {
-                checkout scm
+                git(
+                    url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git',
+                    branch: 'main',
+                    credentialsId: 'dockerhub-nodejs' // credential për Git, nëse e ke
+                )
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Përdor "bat" për Windows
                 bat 'npm install'
             }
         }
@@ -29,32 +30,33 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %DOCKER_IMAGE%:latest ."
+                bat "docker build -t ${IMAGE_NAME} ."
             }
         }
 
         stage('Login & Push to Docker Hub') {
             steps {
-                // Kjo përdor credential ID që ke krijuar në Jenkins
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-nodejs', 
-                    usernameVariable: 'DOCKER_USER', 
-                    passwordVariable: 'DOCKER_PASS')]) {
-                    
-                    // Login në Docker Hub
-                    bat "echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin"
-                    
-                    // Push image në Docker Hub
-                    bat "docker push %DOCKER_IMAGE%:latest"
+                    credentialsId: 'dockerhub-token', // credential me username + PAT që krijove
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat "docker push ${IMAGE_NAME}"
                 }
             }
         }
+    }
 
-        // Opsionale: Stage për Kubernetes
-        stage('Deploy to Kubernetes') {
-            steps {
-                echo "Deploy stage këtu nëse ke K8s"
-            }
+    post {
+        always {
+            bat 'docker logout' // opsionale, për siguri
+        }
+        success {
+            echo 'Pipeline run successfully and image pushed!'
+        }
+        failure {
+            echo 'Pipeline failed! Check logs above.'
         }
     }
 }
