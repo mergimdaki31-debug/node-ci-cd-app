@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dagi25/nodejs-jenkins:latest" // ose mergimdaki31/nodejs-jenkins:latest nëse repo ekziston
+        IMAGE_NAME = 'dagi25/nodejs-jenkins:latest'
     }
 
     stages {
@@ -11,7 +11,7 @@ pipeline {
                 git(
                     url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git',
                     branch: 'main',
-                    credentialsId: 'dockerhub-nodejs' //
+                    credentialsId: 'dockerhub-nodejs' // credential për Git, nëse e ke
                 )
             }
         }
@@ -35,25 +35,24 @@ pipeline {
         }
 
         stage('Login & Push to Docker Hub') {
-    steps {
-        withCredentials([string(credentialsId: 'dockerhub-nodejs', variable: 'DOCKER_PASS')]) {
-            bat 'echo %DOCKER_PASS% | docker login -u daki25 --password-stdin'
-            bat 'docker push dagi25/nodejs-jenkins:latest'
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-nodejs', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
+                    bat "docker push ${IMAGE_NAME}"
+                    bat "docker logout"
+                }
+            }
         }
-    }
-}
-
     }
 
     post {
-        always {
-            bat 'docker logout' // opsionale, për siguri
-        }
         success {
-            echo 'Pipeline run successfully and image pushed!'
+            echo 'Pipeline finished successfully!'
         }
         failure {
-            echo 'Pipeline failed! Check logs above.'
+            echo 'Pipeline failed! Check the logs above.'
         }
     }
 }
