@@ -11,7 +11,7 @@ pipeline {
                 git(
                     url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git',
                     branch: 'main',
-                    credentialsId: 'dockerhub-nodejs' // credential për Git, nëse e ke
+                    credentialsId: 'dockerhub-nodejs' // credential për Git nëse e ke
                 )
             }
         }
@@ -36,23 +36,18 @@ pipeline {
 
         stage('Login & Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-nodejs', 
-                                                  usernameVariable: 'DOCKER_USER', 
-                                                  passwordVariable: 'DOCKER_PASS')]) {
-                    bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-nodejs', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
                     bat "docker push ${IMAGE_NAME}"
-                    bat "docker logout"
+                    bat 'docker logout'
                 }
             }
         }
     }
 
     post {
-        success {
-            echo 'Pipeline finished successfully!'
-        }
-        failure {
-            echo 'Pipeline failed! Check the logs above.'
+        always {
+            echo 'Pipeline finished!'
         }
     }
 }
