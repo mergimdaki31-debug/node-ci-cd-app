@@ -11,7 +11,7 @@ pipeline {
                 git(
                     url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git',
                     branch: 'main',
-                    credentialsId: 'dockerhub-nodejs' // credential për Git, nëse e ke
+                    credentialsId: 'dockerhub-nodejs' //
                 )
             }
         }
@@ -35,17 +35,14 @@ pipeline {
         }
 
         stage('Login & Push to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-token', // credential me username + PAT që krijove
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                    bat "docker push ${IMAGE_NAME}"
-                }
-            }
+    steps {
+        withCredentials([string(credentialsId: 'dockerhub-nodejs', variable: 'DOCKER_PASS')]) {
+            bat 'echo %DOCKER_PASS% | docker login -u daki25 --password-stdin'
+            bat 'docker push dagi25/nodejs-jenkins:latest'
         }
+    }
+}
+
     }
 
     post {
