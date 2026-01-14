@@ -2,12 +2,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "dockerhub_username/nodejs-jenkins"
+        DOCKER_IMAGE = "mergimdaki31/nodejs-jenkins"
         DOCKER_CREDENTIALS_ID = "dockerhub-creds"
     }
 
     stages {
-        stage('Build') {
+
+        stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
@@ -19,13 +20,13 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
 
-        stage('Docker Push') {
+        stage('Login & Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: DOCKER_CREDENTIALS_ID,
