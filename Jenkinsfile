@@ -1,9 +1,8 @@
 pipeline {
     agent any
 
-    environment {
-        // Vendos path për NodeJS që ke instaluar në Jenkins (opsionale)
-        PATH = "${tool name: 'NodeJS', type: 'NodeJS'}/bin;${env.PATH}"
+    tools {
+        nodejs 'NodeJS' // emri i NodeJS tool në Jenkins
     }
 
     stages {
@@ -11,8 +10,6 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM',
                     branches: [[name: '*/main']],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [],
                     userRemoteConfigs: [[url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git']]
                 ])
             }
@@ -47,7 +44,6 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Shembull: mund të përdorësh kubectl për deploy
                 bat 'kubectl apply -f k8s-deployment.yaml'
                 bat 'kubectl apply -f k8s-service.yaml'
             }
@@ -63,3 +59,4 @@ pipeline {
         }
     }
 }
+
