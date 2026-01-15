@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Vendos path për NodeJS që ke instaluar në Jenkins
+        // 
         PATH = "${tool name: 'NodeJS', type: 'NodeJS'}/bin;${env.PATH}"
         // Vendos kubeconfig për Minikube
         KUBECONFIG = "C:\\Users\\MD\\.kube\\config"
