@@ -2,58 +2,55 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dagi25/nodejs-jenkins:latest"
+        DOCKER_IMAGE = "daki25/node-app"
+        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
     }
 
     stages {
-        stage('Checkout SCM') {
+
+        stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/USERNAME/node-ci-cd.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
-                bat 'npm install'
+                sh 'npm install'
             }
         }
 
         stage('Test') {
             steps {
-                bat 'npm test'
+                sh 'npm test'
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Docker Build') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-nodejs',
-                                                  usernameVariable: 'DOCKER_USER',
-                                                  passwordVariable: 'DOCKER_PASS')]) {
-                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                sh "docker build -t $DOCKER_IMAGE:latest ."
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: DOCKER_CREDENTIALS_ID,
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push daki25/node-app:latest
+                    '''
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Deploy to Kubernetes') {
             steps {
-                bat "docker build -t %IMAGE_NAME% ."
+                sh 'kubectl apply -f k8s-deployment.yaml'
             }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                bat "docker push %IMAGE_NAME%"
-                bat 'docker logout'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline finished successfully!'
-        }
-        failure {
-            echo 'Pipeline failed! Check logs above.'
         }
     }
 }
