@@ -2,23 +2,64 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-creds')
+        // Vendos path për NodeJS që ke instaluar në Jenkins (opsionale)
+        PATH = "${tool name: 'NodeJS', type: 'NodeJS'}/bin;${env.PATH}"
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git']]
+                ])
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm install'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'npm test'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t daki25/node-ci-cd-app ."
+                bat 'docker build -t daki25/node-ci-cd-app .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                bat """
-                echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
-                docker push daki25/node-ci-cd-app
-                """
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+                    bat 'docker push daki25/node-ci-cd-app:latest'
+                }
             }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                // Shembull: mund të përdorësh kubectl për deploy
+                bat 'kubectl apply -f k8s-deployment.yaml'
+                bat 'kubectl apply -f k8s-service.yaml'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
