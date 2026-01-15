@@ -8,9 +8,9 @@ pipeline {
 
     stages {
 
-       stage('Checkout') {
+stage('Checkout') {
     steps {
-        git 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git'
+        git branch: 'main', url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git'
     }
 }
         stage('Build') {
