@@ -8,12 +8,11 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/USERNAME/node-ci-cd.git'
-            }
-        }
-
+       stage('Checkout') {
+    steps {
+        git 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git'
+    }
+}
         stage('Build') {
             steps {
                 sh 'npm install'
