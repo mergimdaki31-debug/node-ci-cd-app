@@ -1,8 +1,11 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'NodeJS' // emri i NodeJS tool në Jenkins
+    environment {
+        // Vendos path për NodeJS që ke instaluar në Jenkins
+        PATH = "${tool name: 'NodeJS', type: 'NodeJS'}/bin;${env.PATH}"
+        // Vendos kubeconfig për Minikube
+        KUBECONFIG = "C:\\Users\\MD\\.kube\\config"
     }
 
     stages {
@@ -10,6 +13,8 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM',
                     branches: [[name: '*/main']],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
                     userRemoteConfigs: [[url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git']]
                 ])
             }
@@ -44,8 +49,9 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                bat 'kubectl apply -f k8s-deployment.yaml'
-                bat 'kubectl apply -f k8s-service.yaml'
+                // Deploy me kubeconfig të Minikube
+                bat 'kubectl apply -f k8s-deployment.yaml --validate=false'
+                bat 'kubectl apply -f k8s-service.yaml --validate=false'
             }
         }
     }
@@ -59,4 +65,3 @@ pipeline {
         }
     }
 }
-
