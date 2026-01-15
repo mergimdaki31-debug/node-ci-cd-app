@@ -2,54 +2,57 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "daki25/node-app"
-        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
+        DOCKER_IMAGE = "daki25/node-ci-cd-app"
+        KUBECONFIG = "C:\\Users\\MD\\.kube\\config" // rregullo path sipas konfigurimit tënd
     }
 
     stages {
-
-stage('Checkout') {
-    steps {
-        git branch: 'main', url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git'
-    }
-}
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'npm install'
+                git branch: 'main',
+                    url: 'https://github.com/mergimdaki31-debug/node-ci-cd-app.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm install'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'npm test'
+                bat 'npm test'
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
-                sh "docker build -t $DOCKER_IMAGE:latest ."
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
-        stage('Docker Push') {
+        stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: DOCKER_CREDENTIALS_ID,
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push daki25/node-app:latest
-                    '''
-                }
+                bat "docker login -u daki25 -p YOUR_DOCKERHUB_PASSWORD"
+                bat "docker push %DOCKER_IMAGE%"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s-deployment.yaml'
+                bat "kubectl apply -f k8s-deployment.yaml"
+                bat "kubectl apply -f k8s-service.yaml"
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline finished successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
